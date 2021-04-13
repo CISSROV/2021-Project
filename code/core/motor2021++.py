@@ -25,6 +25,7 @@ if version[0] != '3':
 
 import webSocketClient
 import json
+import time
 
 axis = ['xLeft', 'yLeft', 'triggerLeft', 'xRight', 'yRight', 'triggerRight']
 buttons = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'BACK', 'START']
@@ -166,11 +167,11 @@ def process(data):
     # Load json string into a list
     joysticks = json.loads(data)
     # Verify the number of entries of the list
-    assert len(joysticks) == 14
+    assert len(joysticks[0]) == 14
 
     # Use the labels to make a dictionary
     # with the keys being labels and values being the joystick values
-    joystick1 = dict(zip(axis + buttons, joysticks[:14]))
+    joystick1 = dict(zip(axis + buttons, joysticks[0]))
 
     old = []  # for debugging
 
