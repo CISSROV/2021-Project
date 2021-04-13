@@ -224,12 +224,12 @@ def process(data):
 
     elif joystick1['BACK'] and pos > 0:
         pins[9].write(pos)
-        pos += 1
+        pos -= 1
         time.sleep(.005)
 
     elif joystick1['START'] and pos < 180:
         pins[9].write(pos)
-        pos -= 1
+        pos += 1
         time.sleep(.005)
 
 
