@@ -55,8 +55,8 @@ def getData():
 
     # add every axis and button to a list after sending the values through dealWithNumber()
     # order: [axis0, axis1, axis2, axis3, axis4, axis5, button0, button1, button2, button3, button4, button5, BACK, START]
-    allData.append([dealWithNumber(joysticks[0].get_axis(x), 2) for x in range(6)]
-        + [dealWithNumber(joysticks[0].get_button(x), 2) for x in range(8)])
+    allData.append([dealWithNumber(joysticks[0].get_axis(x)) for x in range(6)]
+        + [dealWithNumber(joysticks[0].get_button(x)) for x in range(8)])
 
     # clear screen
     for i in range(30):
