@@ -25,7 +25,7 @@ if version[0] != '3':
 
 import webSocketClient
 import json
-import time
+from twisted.internet import task, reactor
 
 axis = ['xLeft', 'yLeft', 'triggerLeft', 'xRight', 'yRight', 'triggerRight']
 buttons = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'BACK', 'START']
@@ -33,7 +33,7 @@ buttons = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'BACK', 'START']
 specified by `joystick config.md`
 '''
 
-PORT = '/dev/ttyACM0'
+PORT = '/dev/ttyACM1'
 '''Port that the arduino mega is connected to'''
 
 # Trim values
@@ -46,8 +46,30 @@ As the ROV does not have perfect density,
 this value can be adjusted by the bumpers (LB, RB) on the controller
 to keep the ROV at constant depth when at rest'''
 
-justPressed = [
-    {
+##justPressed = [
+##    {
+##        # 1st joystick
+##        'A': False,
+##        'B': False,
+##        'X': False,
+##        'Y': False,
+##        'LB': False,
+##        'RB': False,
+##        'BACK': False,
+##        'START': False
+##    },
+##    {
+##        # 2nd Joystick
+##        'A': False,
+##        'B': False,
+##        'X': False,
+##        'Y': False,
+##        'LB': False,
+##        'RB': False
+##    }
+##]
+
+justPressed = {
         # 1st joystick
         'A': False,
         'B': False,
@@ -57,17 +79,7 @@ justPressed = [
         'RB': False,
         'BACK': False,
         'START': False
-    },
-    {
-        # 2nd Joystick
-        'A': False,
-        'B': False,
-        'X': False,
-        'Y': False,
-        'LB': False,
-        'RB': False
     }
-]
 '''Stores if a button was just pressed to ensure buttons are only processed
 once per press.
 Changed to true once pressed and false once released'''
@@ -177,38 +189,58 @@ def process(data):
 
     del data
 
-    # stick is a dict representing one of the joysticks
+    # k is each button in dict
     # jPressed is a dict found in justPressed
     # stickNum is either 0 or 1 and is used as an argument in buttonPressed()
     #
     # This for loop is for processing button presses
-    for stick, jPressed, stickNum in zip(joystick1, justPressed, range(1)):
-        for k in stick:
-            if k not in buttons:
-                continue  # only processes button presses, not axis
+    for possible_input, jPressed, stickNum in zip(joystick1, justPressed, range(1)):
+        if possible_input not in buttons:
+            continue  # only processes button presses, not axis
 
-            # value of button, which is 0 or 1
-            v = stick[k]
-            if v == 1 and not jPressed[k]:
-                # button was just pressed
-                buttonPressed(k, stickNum)
-                jPressed[k] = True
+        # value of button, which is 0 or 1
+        v = joystick1[possible_input]
+        if v == 1 and not justPressed[jPressed]:
+            # button was just pressed
+            buttonPressed(possible_input, stickNum)
+            justPressed[jPressed] = True
 
-            elif v == 0 and jPressed[k]:
-                # button was just released
-                jPressed[k] = False
+        elif v == 0 and justPressed[jPressed]:
+            # button was just released
+            justPressed[jPressed] = False
 
-            elif v not in [1, 0]:
-                # Got a value other than 0 or 1 for the state of a button
-                raise ValueError('Got {0}, expected 0 or 1'.format(v))
+        elif v not in [1, 0]:
+            # Got a value other than 0 or 1 for the state of a button
+            raise ValueError('Got {0}, expected 0 or 1'.format(v))
 
-            else:
-                pass  # nothing to do
+        else:
+            pass  # nothing to do
+
+##        for k in len(stick):
+##            if k not in buttons:
+##                continue  # only processes button presses, not axis
+##
+##            # value of button, which is 0 or 1
+##            print("stick", stick)
+##            print("k", k)
+##            v = stick[k]
+##            if v == 1 and not jPressed[k]:
+##                # button was just pressed
+##                buttonPressed(k, stickNum)
+##                jPressed[k] = True
+##
+##            elif v == 0 and jPressed[k]:
+##                # button was just released
+##                jPressed[k] = False
+##
+##            elif v not in [1, 0]:
+##                # Got a value other than 0 or 1 for the state of a button
+##                raise ValueError('Got {0}, expected 0 or 1'.format(v))
+##
+##            else:
+##                pass  # nothing to do
 
     motor_claw = 90
-
-    #pos is for the camera servo
-    pos = 0
 
     # 'A' and 'B' open and close the claw
     if joystick1['A'] and joystick1['B']:
@@ -220,18 +252,28 @@ def process(data):
     elif joystick1['B']:
         motor_claw = 30  # open or close it
 
-    if joystick1['BACK'] and joystick1['START']:
-        pass
 
-    elif joystick1['BACK'] and pos > 0:
-        pins[9].write(pos)
-        pos -= 1
-        time.sleep(.005)
+    #pos is for the camera servo
+    pos = 0
 
-    elif joystick1['START'] and pos < 180:
-        pins[9].write(pos)
-        pos += 1
-        time.sleep(.005)
+    def camera_servo():
+        if joystick1['BACK'] and joystick1['START']:
+            pass
+
+        if joystick1['BACK'] and pos > 0:
+            pins[12].write(pos)
+            pos -= 1
+
+        if joystick1['START'] and pos < 180:
+            pins[12].write(pos)
+            pos += 1
+
+    SERVO_TIMEOUT = 0.1
+
+    # start a loop where every TIMEOUT number of seconds
+    # it runs the given function to get the data and send it off
+    camera_servo_loop = task.LoopingCall(camera_servo)  # only for surface
+    camera_servo_loop.start(SERVO_TIMEOUT)
 
 
 
