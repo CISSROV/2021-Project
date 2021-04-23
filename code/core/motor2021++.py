@@ -33,7 +33,7 @@ buttons = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'BACK', 'START']
 specified by `joystick config.md`
 '''
 
-PORT = '/dev/ttyACM1'
+PORT = '/dev/ttyACM0'
 '''Port that the arduino mega is connected to'''
 
 # Trim values
@@ -126,8 +126,7 @@ if __name__ == '__main__':
     example: pins[8].write(150)
     '''
 
-cameradown = False
-cameraup = False
+    pos = 0
 
 def buttonPressed(button, num):
     '''Specifies what to do if a button is pressed
@@ -216,30 +215,6 @@ def process(data):
         else:
             pass  # nothing to do
 
-##        for k in len(stick):
-##            if k not in buttons:
-##                continue  # only processes button presses, not axis
-##
-##            # value of button, which is 0 or 1
-##            print("stick", stick)
-##            print("k", k)
-##            v = stick[k]
-##            if v == 1 and not jPressed[k]:
-##                # button was just pressed
-##                buttonPressed(k, stickNum)
-##                jPressed[k] = True
-##
-##            elif v == 0 and jPressed[k]:
-##                # button was just released
-##                jPressed[k] = False
-##
-##            elif v not in [1, 0]:
-##                # Got a value other than 0 or 1 for the state of a button
-##                raise ValueError('Got {0}, expected 0 or 1'.format(v))
-##
-##            else:
-##                pass  # nothing to do
-
     motor_claw = 90
 
     # 'A' and 'B' open and close the claw
@@ -252,30 +227,17 @@ def process(data):
     elif joystick1['B']:
         motor_claw = 30  # open or close it
 
+    global pos
 
-    #pos is for the camera servo
-    pos = 0
+    pins[12].write(pos)
+    if joystick1['BACK'] and joystick1['START']:
+        pass
 
-    def camera_servo():
-        if joystick1['BACK'] and joystick1['START']:
-            pass
+    elif joystick1['BACK'] and pos > 0:
+        pos -= 5
 
-        if joystick1['BACK'] and pos > 0:
-            pins[12].write(pos)
-            pos -= 1
-
-        if joystick1['START'] and pos < 180:
-            pins[12].write(pos)
-            pos += 1
-
-    SERVO_TIMEOUT = 0.1
-
-    # start a loop where every TIMEOUT number of seconds
-    # it runs the given function to get the data and send it off
-    camera_servo_loop = task.LoopingCall(camera_servo)  # only for surface
-    camera_servo_loop.start(SERVO_TIMEOUT)
-
-
+    elif joystick1['START'] and pos < 180:
+        pos += 5
 
 
     #   Motor positioning
@@ -469,7 +431,7 @@ def process(data):
     # clear screen
     for i in range(30):
         # \r is a special character that makes print
-        # start at the beginning of the line, overwritting
+        # start at the beginning of the line, overwriting
         # what is already there
         #
         # \033 is the ascii escape character for special
@@ -506,3 +468,4 @@ def process(data):
 # ip is that of the server
 if __name__ == '__main__':
     webSocketClient.start('motor', process, ip="192.168.1.2")
+    webSocketClient.start('motor', camera_servo, ip="192.168.1.2")

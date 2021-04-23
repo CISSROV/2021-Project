@@ -36,7 +36,7 @@ PORT = 8008
 '''needs the be the same here as in server2020'''
 
 # frequency = 1/timeout
-TIMEOUT = 0.1
+TIMEOUT = 0.05
 '''time between surface2020 being run in seconds'''
 
 
