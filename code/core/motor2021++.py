@@ -215,18 +215,20 @@ def process(data):
         else:
             pass  # nothing to do
 
-    motor_claw = 90
+    motor_claw = 95
 
     # 'A' and 'B' open and close the claw
     if joystick1['A'] and joystick1['B']:
         pass  # do nothing because both are pressed
 
     elif joystick1['A']:
-        motor_claw = 150  # open or close it
+        motor_claw = 160  # open or close it
 
     elif joystick1['B']:
-        motor_claw = 30  # open or close it
+        motor_claw = 20  # open or close it
 
+
+    # For camera servo
     global pos
 
     pins[12].write(pos)
